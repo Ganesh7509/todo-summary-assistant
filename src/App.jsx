@@ -7,7 +7,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState('');
 
-  const API_URL = 'http://localhost:5001';
+  // ✅ Updated for Vercel serverless function
+  const API_URL = '/api';
 
   useEffect(() => {
     fetchTodos();
@@ -16,10 +17,7 @@ function App() {
   const fetchTodos = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/todos`, {
-        method: 'GET',
-        mode: 'cors',
-      });
+      const res = await fetch(`${API_URL}/todos`);
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -46,7 +44,7 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/todos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: message }),
       });
       const newTodo = await res.json();
@@ -82,13 +80,11 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/todos/${edit.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: message }),
       });
 
       const updatedTodo = await res.json();
-      console.log("Updated Todo:", updatedTodo); // debug check
-
       setList(
         list.map((todo) =>
           String(todo.id) === String(edit.id) ? { ...todo, text: updatedTodo.text } : todo
@@ -142,15 +138,16 @@ function App() {
   };
 
   return (
-    <div style={{padding: 30,
-    maxWidth: 500,
-    margin: '40px auto',
-    fontFamily: 'Arial, sans-serif',
-    border: '1px solid #ddd',
-    borderRadius: 12,
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    backgroundColor: '#fff'
- }}>
+    <div style={{
+      padding: 30,
+      maxWidth: 500,
+      margin: '40px auto',
+      fontFamily: 'Arial, sans-serif',
+      border: '1px solid #ddd',
+      borderRadius: 12,
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+      backgroundColor: '#fff'
+    }}>
       <h1 style={{ textAlign: 'center', color: '#4CAF50' }}>Todo Summary Assistant</h1>
       <form onSubmit={edit.isEdit ? updateTodo : addTodo}>
         <input
@@ -158,13 +155,17 @@ function App() {
           placeholder="Enter a todo"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          style={{ width: '100%', padding: 12,   fontSize: 16,
-          borderRadius: 6,
-          border: '1px solid #ccc',
-          marginBottom: 10,
-          outline: 'none' }}
+          style={{
+            width: '100%',
+            padding: 12,
+            fontSize: 16,
+            borderRadius: 6,
+            border: '1px solid #ccc',
+            marginBottom: 10,
+            outline: 'none'
+          }}
         />
-        <button type="submit"   style={{
+        <button type="submit" style={{
           width: '100%',
           padding: 12,
           backgroundColor: edit.isEdit ? '#2196F3' : '#4CAF50',
@@ -181,35 +182,36 @@ function App() {
       {loading ? (
         <p style={{ textAlign: 'center', marginTop: 20 }}>Loading todos...</p>
       ) : (
-        <ul style={{ marginTop: 30,paddingLeft: 0, listStyle: 'none' }}>
+        <ul style={{ marginTop: 30, paddingLeft: 0, listStyle: 'none' }}>
           {list.map(({ id, text }) => (
-            <li key={id} style={{             backgroundColor: '#f9f9f9',
-            padding: '10px 15px',
-            marginBottom: 10,
-            borderRadius: 6,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            border: '1px solid #eee'
- }}>
-              {text}{' '}
-              <button onClick={() => startEdit(id, text)}  style={{
-                  marginRight: 8,
-                  backgroundColor: '#FF9800',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '6px 10px',
-                  borderRadius: 4,
-                  cursor: 'pointer'
-                }}>Edit</button>{' '}
-              <button onClick={() => deleteTodo(id)}  style={{
-                  backgroundColor: '#F44336',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '6px 10px',
-                  borderRadius: 4,
-                  cursor: 'pointer'
-                }}>Delete</button>
+            <li key={id} style={{
+              backgroundColor: '#f9f9f9',
+              padding: '10px 15px',
+              marginBottom: 10,
+              borderRadius: 6,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              border: '1px solid #eee'
+            }}>
+              {text}
+              <button onClick={() => startEdit(id, text)} style={{
+                marginRight: 8,
+                backgroundColor: '#FF9800',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 10px',
+                borderRadius: 4,
+                cursor: 'pointer'
+              }}>Edit</button>
+              <button onClick={() => deleteTodo(id)} style={{
+                backgroundColor: '#F44336',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 10px',
+                borderRadius: 4,
+                cursor: 'pointer'
+              }}>Delete</button>
             </li>
           ))}
         </ul>
@@ -225,12 +227,16 @@ function App() {
           borderRadius: 6,
           fontWeight: 'bold',
           cursor: 'pointer'
-        }}
->Get Summary</button>
+        }}>Get Summary</button>
         {summary && (
-          <div style={{ marginTop: 10, padding: 10, backgroundColor: '#f0f0f0',borderRadius: 6,
-          fontSize: 15,
-          color: '#333' }}>
+          <div style={{
+            marginTop: 10,
+            padding: 10,
+            backgroundColor: '#f0f0f0',
+            borderRadius: 6,
+            fontSize: 15,
+            color: '#333'
+          }}>
             <strong>Summary:</strong> {summary}
           </div>
         )}
@@ -240,4 +246,3 @@ function App() {
 }
 
 export default App;
-

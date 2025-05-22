@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const OpenAI = require('openai');
 const supabase = require('./supabase');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ const openai = new OpenAI({
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   methods: ['GET', 'POST', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type'],
 }));
@@ -28,13 +29,21 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check route
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Test route
 app.get('/', (req, res) => {
   res.send('Backend is running...');
 });
 
-console.log('Supabase URL:', process.env.SUPABASE_URL);
-console.log('Loaded SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Yes' : 'No');
+// Logging environment info only in non-production
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Supabase URL:', process.env.SUPABASE_URL);
+  console.log('Loaded SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Yes' : 'No');
+}
 
 // ==========================
 //        TODO ROUTES
@@ -82,8 +91,11 @@ app.post('/todos', async (req, res, next) => {
 app.patch('/todos/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { text } = req.body;
+    if (!/^\d+$/.test(id)) {
+      return res.status(400).json({ error: 'Invalid ID format' });
+    }
 
+    const { text } = req.body;
     if (!text || text.trim() === '') {
       return res.status(400).json({ error: 'Todo text is required' });
     }
@@ -108,6 +120,9 @@ app.patch('/todos/:id', async (req, res, next) => {
 app.delete('/todos/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    if (!/^\d+$/.test(id)) {
+      return res.status(400).json({ error: 'Invalid ID format' });
+    }
 
     const { data, error } = await supabase
       .from('todos')
@@ -129,7 +144,14 @@ app.delete('/todos/:id', async (req, res, next) => {
 // ==========================
 //    SUMMARIZE TODOs ROUTE
 // ==========================
-app.post('/summarize', async (req, res, next) => {
+
+const summarizeLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  message: { error: 'Too many summarize requests, please try again later.' },
+});
+
+app.post('/summarize', summarizeLimiter, async (req, res, next) => {
   try {
     const { data: todos, error } = await supabase
       .from('todos')
@@ -168,3 +190,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
