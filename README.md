@@ -110,8 +110,7 @@ Frontend: Deployed via Vercel or Netlify
 
 Backend: Can be deployed on Render, Railway, or Heroku
 
-🔗 Live URL
-👉 https://todo-summary-assistant.vercel.app
+
 
 Project is ready for production deployment with build scripts configured.
 
